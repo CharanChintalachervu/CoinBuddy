@@ -1,21 +1,28 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*.pyo
-
-# Virtual environment
-.env/
-.venv/
-venv/
-
-# dotenv environment variables
+# Secrets
 .env
 
-# VS Code
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Generated at runtime
+data/
+models/
+reports/
+site/
+*.db
+*.pkl
+*.joblib
+
+# Editors / OS
 .vscode/
-
-# MacOS
+.idea/
 .DS_Store
-
-# Logs
-*.log
+Thumbs.db

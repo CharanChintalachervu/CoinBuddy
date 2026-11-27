@@ -1,0 +1,137 @@
+site_name: Coin Buddy
+site_description: Crypto signals from technical indicators and Reddit sentiment, with honest backtesting.
+copyright: "© 2025–2026 Charan Chintalachervu. All rights reserved. · Educational tool, not financial advice."
+# Set these after pushing to GitHub, e.g.:
+# site_url: https://<your-username>.github.io/coin-buddy/
+# repo_url: https://github.com/<your-username>/coin-buddy
+
+docs_dir: docs
+strict: true
+
+theme:
+  name: material
+  logo: images/logo.svg
+  favicon: images/favicon.svg
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            show_root_heading: true
+            show_source: true
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            filters: ["!^_"]
+            show_if_no_docstring: true
+            heading_level: 2
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quickstart tour: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - Using the app:
+      - Markets dashboard: user-guide/dashboard.md
+      - Backtest page: user-guide/backtest-page.md
+      - History page: user-guide/history.md
+      - Command line: user-guide/cli.md
+      - Alerts: user-guide/alerts.md
+  - How it works:
+      - Indicators: concepts/indicators.md
+      - Signal engine: concepts/signals.md
+      - Sentiment: concepts/sentiment.md
+      - Backtesting: concepts/backtesting.md
+      - Machine learning: concepts/machine-learning.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Web API: architecture/web-api.md
+      - Frontend: architecture/frontend.md
+      - Data & storage: architecture/storage.md
+      - Design decisions: DESIGN.md
+  - Code reference:
+      - reference/index.md
+      - Config & pipeline: reference/core.md
+      - Data sources: reference/data.md
+      - Analytics: reference/analytics.md
+      - App layer: reference/app.md
+  - Development:
+      - Testing: development/testing.md
+      - Extending Coin Buddy: development/extending.md
+      - Deployment: development/deployment.md
+      - Publishing safely: development/publishing.md
+      - Troubleshooting & FAQ: development/faq.md
+  - Changelog: changelog.md

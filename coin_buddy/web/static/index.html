@@ -1,0 +1,216 @@
+<!doctype html>
+<!-- Coin Buddy. Copyright (c) 2025-2026 Charan Chintalachervu. All rights reserved. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coin Buddy</title>
+  <meta name="description" content="Crypto signals from technical indicators and Reddit sentiment, with honest backtesting.">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/theme-init.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"
+          integrity="sha384-KkYqTZlM13Zya6fVUF3IGCBOQ1ehFeJVVgxaVvD/0MebineF9EI8Jkd3NnWNChqN"
+          crossorigin="anonymous" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Coin Buddy home">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d74f7"/><stop offset="1" stop-color="#12b981"/></linearGradient></defs>
+        <rect width="32" height="32" rx="9" fill="url(#g)"/>
+        <path d="M8 20l5-6 4 4 7-8" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Coin Buddy</span>
+    </a>
+
+    <nav class="nav" aria-label="Sections">
+      <a href="#/markets" data-view="markets" class="nav-link">Markets</a>
+      <a href="#/backtest" data-view="backtest" class="nav-link">Backtest</a>
+      <a href="#/history" data-view="history" class="nav-link">History</a>
+    </nav>
+
+    <div class="search">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="search" type="search" list="market-list" placeholder="Search coins, e.g. ETH/USDT" autocomplete="off" spellcheck="false" aria-label="Search markets">
+      <kbd>/</kbd>
+      <datalist id="market-list"></datalist>
+    </div>
+
+    <div class="topbar-right">
+      <span class="status" id="status" title="Live data status"><span class="dot"></span><span class="status-text">Connecting</span></span>
+      <span class="pill" id="exchange-pill" title="Data source">—</span>
+      <button id="theme-toggle" class="icon-btn" aria-label="Switch colour theme" title="Switch theme">
+        <svg class="sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>
+        <svg class="moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============================== MARKETS ============================== -->
+    <section id="view-markets" class="view markets" aria-label="Markets">
+      <aside class="card watchlist" aria-label="Watchlist">
+        <div class="card-head">
+          <h2>Watchlist</h2>
+          <span class="muted small">24h</span>
+        </div>
+        <ul id="watchlist" class="watch-items"></ul>
+      </aside>
+
+      <section class="card chart-card" aria-label="Price chart">
+        <div class="quote-head">
+          <div class="quote-main">
+            <div class="sym-row">
+              <span class="coin-badge" id="coin-badge">B</span>
+              <h1 id="sym-name">—</h1>
+              <button id="star" class="star-btn" aria-pressed="false" title="Add to watchlist" aria-label="Add to watchlist">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <div class="price-row">
+              <span id="price" class="price num">—</span>
+              <span id="change" class="change num"></span>
+            </div>
+          </div>
+          <dl class="stats">
+            <div><dt>24h high</dt><dd id="stat-high" class="num">—</dd></div>
+            <div><dt>24h low</dt><dd id="stat-low" class="num">—</dd></div>
+            <div><dt>24h volume</dt><dd id="stat-vol" class="num">—</dd></div>
+          </dl>
+        </div>
+
+        <div class="toolbar" role="toolbar" aria-label="Chart controls">
+          <div class="seg" id="tf-seg" role="group" aria-label="Timeframe"></div>
+          <div class="seg" id="type-seg" role="group" aria-label="Chart type">
+            <button data-type="candles" aria-pressed="true" title="Candlesticks">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 3v4M7 15v6M17 3v8M17 17v4" stroke="currentColor" stroke-width="1.8"/><rect x="4.5" y="7" width="5" height="8" rx="1" fill="currentColor"/><rect x="14.5" y="11" width="5" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            </button>
+            <button data-type="area" aria-pressed="false" title="Line">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 17l5-6 4 4 9-10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="chips" id="ind-chips" role="group" aria-label="Indicators">
+            <button data-ind="volume" aria-pressed="true">Volume</button>
+            <button data-ind="bb" aria-pressed="true">Bollinger</button>
+            <button data-ind="signals" aria-pressed="true">Signals</button>
+            <button data-ind="rsi" aria-pressed="true">RSI</button>
+            <button data-ind="macd" aria-pressed="false">MACD</button>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <div id="legend" class="legend num" aria-hidden="true"></div>
+          <div id="chart" class="chart"></div>
+          <div id="chart-loading" class="chart-overlay"><div class="spinner" aria-label="Loading chart"></div></div>
+          <div id="chart-error" class="chart-overlay error" hidden></div>
+        </div>
+      </section>
+
+      <aside class="insights" aria-label="Signal insights">
+        <article class="card signal-card" aria-live="polite">
+          <div class="card-head">
+            <h2>Signal</h2>
+            <span class="muted small" id="signal-meta">—</span>
+          </div>
+          <div id="signal-body"><div class="skeleton h-lg"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h2>Model outlook</h2>
+            <span class="badge">ML</span>
+          </div>
+          <div id="ml-body"><div class="skeleton"></div></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h2>Reddit mood</h2>
+            <span class="muted small" id="sent-meta"></span>
+          </div>
+          <div id="sent-body"><div class="skeleton h-lg"></div><div class="skeleton"></div></div>
+        </article>
+      </aside>
+    </section>
+
+    <!-- ============================== BACKTEST ============================== -->
+    <section id="view-backtest" class="view page" hidden aria-label="Backtest">
+      <div class="page-head">
+        <div>
+          <h1>Strategy backtest</h1>
+          <p class="muted">Replays real history. Signals at a candle's close fill at the next open, and every trade pays
+            <span id="bt-costs">fees and slippage</span>. Results are always compared with simply holding.</p>
+        </div>
+      </div>
+
+      <form id="bt-form" class="card bt-form">
+        <label class="field">
+          <span>Market</span>
+          <input id="bt-symbol" list="market-list" required autocomplete="off" spellcheck="false">
+        </label>
+        <label class="field">
+          <span>Timeframe</span>
+          <select id="bt-tf"></select>
+        </label>
+        <div class="field">
+          <span>Period</span>
+          <div class="seg" id="bt-days" role="group" aria-label="Period">
+            <button type="button" data-days="90">3M</button>
+            <button type="button" data-days="180">6M</button>
+            <button type="button" data-days="365" aria-pressed="true">1Y</button>
+            <button type="button" data-days="730">2Y</button>
+          </div>
+        </div>
+        <div class="field">
+          <span>Strategy</span>
+          <div class="seg" id="bt-strategy" role="group" aria-label="Strategy">
+            <button type="button" data-strategy="rules">Rules</button>
+            <button type="button" data-strategy="ml">ML</button>
+            <button type="button" data-strategy="both" aria-pressed="true">Compare</button>
+          </div>
+        </div>
+        <button type="submit" class="btn primary" id="bt-run">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>
+          Run backtest
+        </button>
+      </form>
+
+      <div id="bt-output">
+        <div class="empty card">
+          <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true"><rect x="6" y="10" width="52" height="40" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M14 40l10-12 8 7 16-17" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h3>Test a strategy before you trust it</h3>
+          <p class="muted">Pick a market and period, then run. The ML comparison trains walk-forward, so it can take up to a minute.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== HISTORY ============================== -->
+    <section id="view-history" class="view page" hidden aria-label="History">
+      <div class="page-head">
+        <div>
+          <h1>Signal history</h1>
+          <p class="muted">Every signal Coin Buddy computes is saved locally in SQLite. Over time this becomes sentiment
+            history you can backtest.</p>
+        </div>
+        <button class="btn" id="history-refresh">Refresh</button>
+      </div>
+      <div class="card table-card" id="history-body"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>
+      <strong class="copyright">© 2025–2026 Charan Chintalachervu. All rights reserved.</strong>
+      <span id="disclaimer">Educational tool. Not financial advice.</span>
+    </span>
+    <span class="muted">Coin Buddy <span id="version"></span> · Charts by <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener">TradingView Lightweight Charts</a></span>
+  </footer>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+</body>
+</html>

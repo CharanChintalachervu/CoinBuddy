@@ -1,0 +1,28 @@
+/* Small additions on top of Material for MkDocs. */
+:root {
+  --cb-up: #16c784;
+  --cb-down: #f25563;
+}
+
+/* Screenshots: rounded, with a subtle border so dark images don't blend into the dark theme. */
+.md-typeset img.shot {
+  border-radius: 10px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+.md-typeset figure { margin: 1.4em auto; }
+.md-typeset figcaption { font-size: 0.72rem; color: var(--md-default-fg-color--light); }
+
+/* Coloured inline labels used in tables: BUY / SELL / HOLD. */
+.md-typeset .tag-buy, .md-typeset .tag-sell, .md-typeset .tag-hold {
+  font-weight: 700; font-size: 0.68rem; padding: 0.1em 0.5em; border-radius: 0.3em; white-space: nowrap;
+}
+.md-typeset .tag-buy { color: var(--cb-up); background: rgba(22, 199, 132, 0.14); }
+.md-typeset .tag-sell { color: var(--cb-down); background: rgba(242, 85, 99, 0.14); }
+.md-typeset .tag-hold { color: var(--md-default-fg-color--light); background: var(--md-default-fg-color--lightest); }
+
+/* Keep file and key names in the first table column on one line. */
+.md-typeset table:not([class]) td:first-child code { white-space: nowrap; word-break: keep-all; }
+
+/* Home page hero. */
+.md-typeset .hero { font-size: 1.05rem; color: var(--md-default-fg-color--light); max-width: 42rem; }

@@ -1,0 +1,58 @@
+# Coin Buddy configuration.
+# Every value here can be changed without touching code.
+# Secrets (Reddit credentials) never go here; they live in .env.
+
+market:
+  exchange: binance        # any ccxt exchange id: binance, kraken, coinbase, bybit, okx ...
+  symbol: BTC/USDT         # ccxt unified symbol (use BTC/USD on kraken/coinbase)
+  timeframe: 1h            # 1m, 5m, 15m, 1h, 4h, 1d
+  lookback_candles: 300    # history pulled for live indicators (needs > macd_slow + macd_signal)
+
+indicators:
+  rsi_window: 14
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  bb_window: 20
+  bb_std: 2.0
+
+strategy:
+  rsi_oversold: 30
+  rsi_overbought: 70
+  sentiment_buy: 0.2       # average compound sentiment above this votes BUY
+  sentiment_sell: -0.2     # ... below this votes SELL
+  min_votes: 2             # a side needs at least this many votes AND must beat the other side
+
+sentiment:
+  source: reddit           # reddit (public JSON, or praw if credentials exist in .env)
+  subreddits: [cryptocurrency, bitcoin]
+  posts_per_subreddit: 25
+  include_body: true       # score title + post text, not just the title
+  model: vader             # vader (fast, CPU) or finbert (needs: pip install ".[finbert]")
+
+backtest:
+  fee_rate: 0.001          # 0.1% per side, Binance spot taker
+  slippage_rate: 0.0005    # 0.05% per side, assumed execution cost
+  initial_capital: 10000
+
+ml:
+  horizon_candles: 12      # predict the return this many candles ahead
+  train_candles: 2000      # walk-forward training window
+  test_candles: 250        # walk-forward test window
+  probability_threshold: 0.55  # go long at P(up) >= this, go flat at P(up) < 1 - this
+  model_path: "models/{exchange}-{symbol}-{timeframe}.joblib"   # one model per market
+
+storage:
+  database: data/coin_buddy.db
+
+alerts:
+  sound: true
+  discord_webhook_env: DISCORD_WEBHOOK_URL   # optional: name of the .env variable holding a free Discord webhook
+
+web:
+  host: 127.0.0.1          # use 0.0.0.0 to allow other devices on your network (Docker does this)
+  port: 8000
+  watchlist: [BTC/USDT, ETH/USDT, SOL/USDT, BNB/USDT, XRP/USDT, DOGE/USDT]   # default list; users can star more
+  chart_candles: 500       # candles drawn on the chart
+  refresh_seconds: 10      # how often the browser polls for live prices
+  sentiment_cache_seconds: 300   # Reddit is rate-limited; reuse sentiment for this long
