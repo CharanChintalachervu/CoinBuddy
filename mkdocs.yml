@@ -1,9 +1,9 @@
 site_name: Coin Buddy
 site_description: Crypto signals from technical indicators and Reddit sentiment, with honest backtesting.
 copyright: "© 2025–2026 Charan Chintalachervu. All rights reserved. · Educational tool, not financial advice."
-# Set these after pushing to GitHub, e.g.:
-# site_url: https://<your-username>.github.io/coin-buddy/
-# repo_url: https://github.com/<your-username>/coin-buddy
+site_url: https://charanchintalachervu.github.io/CoinBuddy/
+repo_url: https://github.com/CharanChintalachervu/CoinBuddy
+repo_name: CharanChintalachervu/CoinBuddy
 
 docs_dir: docs
 strict: true

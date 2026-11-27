@@ -12,7 +12,9 @@ Coin Buddy pulls live candles from any of 100+ exchanges, scores Reddit sentimen
 
 ![Coin Buddy dashboard](docs/images/dashboard-dark.png)
 
-> 📖 **Full documentation:** a searchable docs website covering installation, every part of the dashboard, the maths behind each signal, the architecture, the API, a generated code reference, and how to extend it. Preview it locally with `pip install -e ".[docs]"` then `mkdocs serve`. Once pushed to GitHub, it publishes automatically to GitHub Pages (see `docs/development/deployment.md`).
+> 📖 **Documentation: <https://charanchintalachervu.github.io/CoinBuddy/>**
+>
+> A searchable docs website covering installation, every part of the dashboard, the maths behind each signal, the architecture, the API, a generated code reference, and how to extend it. It updates automatically on every push to `main`. To preview it locally: `pip install -e ".[docs]"`, then `mkdocs serve -a 127.0.0.1:8001`.
 
 ---
 
