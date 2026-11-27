@@ -43,7 +43,7 @@ Reproduce it with `coin-buddy backtest --days 730 --report`. Numbers will differ
 - **Trading-style web dashboard:** live prices that flash on change, a watchlist with sparklines, interactive candlestick/line charts (zoom, pan, crosshair readout) with volume, Bollinger Bands, RSI and MACD panes and BUY/SELL markers, signal, ML and sentiment cards, an interactive backtester, dark/light themes, and a mobile layout.
 - **History in SQLite:** every snapshot and scored post is stored, building a sentiment history you can backtest later.
 - **Alerts:** a sound on your machine, plus optional free Discord webhook messages.
-- **Engineering:** typed config, 55 offline tests (including the web API), ruff linting, GitHub Actions CI, Docker, a strict Content-Security-Policy.
+- **Engineering:** typed config, 61 offline tests (including the web API), ruff linting, GitHub Actions CI, Docker, a strict Content-Security-Policy.
 
 ## Architecture
 
@@ -81,7 +81,7 @@ coin-buddy dashboard --open       # web app at http://127.0.0.1:8000
 
 That's it: no keys and no `.env` needed. To add optional extras, copy `.env.example` to `.env`.
 
-> **In the US?** Binance blocks US IP addresses. Use `--exchange kraken --symbol BTC/USD`, or set them in `config.yaml`.
+> **In the US?** Binance blocks US IP addresses. Use `--exchange coinbase --symbol BTC/USD`, or set them in `config.yaml` (Coinbase also serves the full history backtests need; Kraken only serves about a month).
 
 ## Commands
 
@@ -166,7 +166,7 @@ A side wins only with **at least 2 votes and a strict majority**; anything else 
 ## Testing
 
 ```bash
-pytest                    # 55 tests, fully offline: fake exchange, synthetic prices
+pytest                    # 61 tests, fully offline: fake exchange, synthetic prices
 ruff check . && ruff format --check .
 ```
 
@@ -188,7 +188,7 @@ docker build -t coin-buddy .
 docker run -p 8000:8000 coin-buddy      # then open http://localhost:8000
 ```
 
-**Free hosting:** any free Docker host works, for example a Docker Space on Hugging Face or a free web service on Render. Many free hosts run in the US, where Binance is blocked, so set `exchange: kraken` and US-dollar symbols (e.g. `BTC/USD`) in `config.yaml`.
+**Free hosting:** any free Docker host works, for example a Docker Space on Hugging Face or a free web service on Render. Many free hosts run in the US, where Binance is blocked, so the Docker image uses `config.hosted.yaml` (Coinbase with USD pairs). Live demo setup: see the Deployment page in the docs.
 
 ## Project structure
 
@@ -210,7 +210,7 @@ coin_buddy/
 └── web/
     ├── server.py       # FastAPI JSON API, caching, security headers
     └── static/         # index.html, styles.css, app.js (no build step)
-tests/                  # 55 offline tests
+tests/                  # 61 offline tests
 docs/                   # documentation website (MkDocs Material)
 mkdocs.yml              # docs site configuration
 

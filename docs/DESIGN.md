@@ -6,7 +6,7 @@ This document explains *why* Coin Buddy is built the way it is. Each section sta
 
 **Decision:** fetch candles through [ccxt](https://github.com/ccxt/ccxt) using public endpoints.
 **Rejected:** `python-binance` with API keys (v1).
-**Why:** reading prices never needs authentication. Requiring keys adds a security risk (v1 leaked them in source code) and blocks users without an account. ccxt also lets one config line switch between 100+ exchanges, which matters because Binance blocks US users (`exchange: kraken` with `symbol: BTC/USD` works there).
+**Why:** reading prices never needs authentication. Requiring keys adds a security risk (v1 leaked them in source code) and blocks users without an account. ccxt also lets one config line switch between 100+ exchanges, which matters because Binance blocks US users (`exchange: coinbase` with `symbol: BTC/USD` works there, with full history for backtests).
 
 **Detail worth knowing:** `fetch_candles(closed_only=True)` drops the candle that is still forming. Indicators computed on a half-finished candle change until it closes, so a live signal could flip and a backtest would never see that behavior.
 
@@ -74,7 +74,7 @@ Details worth being able to explain:
 - **Markets loaded once, under a lock, at startup:** ccxt downloads the exchange's full market list on first use. Without the lock, concurrent first requests each downloaded it in parallel and the first page took more than 20 s; now it takes about 3 s, and the server warms it up before the first visitor arrives.
 - **Chart markers = position changes:** BUY/SELL arrows mark where the backtester would enter or exit, not every candle with a BUY vote, so the chart and the backtest tell the same story. They never appear on the still-forming candle.
 - **Incremental live updates:** new candles are applied with `series.update()`, so a user who has zoomed in isn't thrown back to the latest candle every 10 seconds.
-- **Security:** a strict Content-Security-Policy (no inline scripts; one inline stylesheet allowed by its hash, for the chart library's attribution logo), `X-Frame-Options: DENY`, `nosniff`, and Subresource Integrity on the chart library from the CDN. All Reddit text is HTML-escaped and post links are only rendered when they point to reddit.com.
+- **Security:** a strict Content-Security-Policy (no inline scripts; one inline stylesheet allowed by its hash, for the chart library's attribution logo), framing denied by default (`X-Frame-Options: DENY`; only an explicitly configured host like Hugging Face may embed it), `nosniff`, and Subresource Integrity on the chart library from the CDN. All Reddit text is HTML-escaped and post links are only rendered when they point to reddit.com.
 - **Resilience:** polling pauses when the tab is hidden, the status pill shows Live, Delayed or Offline, and failures show retry buttons instead of blank areas.
 
 ## Questions to be ready for

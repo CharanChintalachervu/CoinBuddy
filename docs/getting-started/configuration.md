@@ -17,9 +17,11 @@ You only need to edit `config.yaml` when you want different behaviour. Every key
 Market settings can be overridden per command without editing the file:
 
 ```bash
-coin-buddy snapshot --exchange kraken --symbol BTC/USD --timeframe 4h
+coin-buddy snapshot --exchange coinbase --symbol BTC/USD --timeframe 1d
 coin-buddy --config my-config.yaml backtest
 ```
+
+To switch the whole config file without the flag (handy for servers and Docker), set the `COIN_BUDDY_CONFIG` environment variable to the file's path. The Docker image uses this to load `config.hosted.yaml`, the settings for the public demo (see [Deployment](../development/deployment.md#how-the-hosted-copy-differs)).
 
 ## `market`
 
@@ -106,6 +108,9 @@ See [Machine learning](../concepts/machine-learning.md).
 | `chart_candles` | `500` | Candles drawn on the chart. |
 | `refresh_seconds` | `10` | How often the browser polls for live prices and candles. |
 | `sentiment_cache_seconds` | `300` | Reddit is rate-limited, so sentiment is reused for this long. |
+| `frame_ancestors` | `[]` | Sites allowed to show the dashboard inside a frame. Empty means none, which blocks clickjacking. The hosted config allows `https://huggingface.co`, because Spaces display apps in a frame. |
+
+The timeframe buttons only list timeframes the configured exchange supports. For example, Coinbase has no 4-hour candles.
 
 ## `.env` (optional secrets)
 

@@ -1,7 +1,7 @@
 # Testing
 
 ```bash
-pytest                                 # 55 tests, ~20 s, fully offline
+pytest                                 # 61 tests, ~25 s, fully offline
 ruff check . && ruff format --check .  # lint + formatting
 ```
 

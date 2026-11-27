@@ -116,3 +116,57 @@ def test_json_never_contains_nan(client):
     text = client.get("/api/candles", params={"symbol": "BTC/USDT", "timeframe": "1h", "limit": 100}).text
     assert "NaN" not in text and "Infinity" not in text
     assert pd.notna(1)  # keeps pandas import meaningful for readers: NaN is converted server-side
+
+
+def test_framing_is_denied_by_default(client):
+    headers = client.get("/").headers
+    assert headers["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in headers["content-security-policy"]
+
+
+def test_framing_allowed_only_for_configured_hosts():
+    from coin_buddy.web.server import security_headers
+
+    headers = security_headers(["https://huggingface.co"])
+    assert "x-frame-options" not in {k.lower() for k in headers}
+    assert "frame-ancestors 'self' https://huggingface.co" in headers["Content-Security-Policy"]
+
+
+def test_only_one_backtest_runs_at_a_time(tmp_path, monkeypatch):
+    import threading
+
+    import coin_buddy.web.server as server
+
+    started, release = threading.Event(), threading.Event()
+
+    def slow_backtest(*args, **kwargs):
+        started.set()
+        release.wait(5)
+        raise RuntimeError("stop here")
+
+    monkeypatch.setattr(server, "backtest", slow_backtest)
+    cfg = Config()
+    cfg.storage.database = str(tmp_path / "web.db")
+    app = server.create_app(cfg, exchange_factory=lambda _id: object(), sentiment_fetcher=lambda _c: None)
+    first = TestClient(app, raise_server_exceptions=False)
+    worker = threading.Thread(target=lambda: first.post("/api/backtest", json={"symbol": "BTC/USDT", "days": 60}))
+    worker.start()
+    assert started.wait(5)
+    busy = TestClient(app).post("/api/backtest", json={"symbol": "ETH/USDT", "days": 60})
+    release.set()
+    worker.join(5)
+    assert busy.status_code == 429
+
+
+def test_only_timeframes_the_exchange_supports(tmp_path):
+    class NoFourHour(WebFakeExchange):
+        timeframes = {"1m": "60", "5m": "300", "15m": "900", "1h": "3600", "1d": "86400"}
+
+    df = make_ohlcv(300)
+    exchange = NoFourHour(df, now_ms=int(df.index[-1].value // 1_000_000), page=1000)
+    cfg = Config()
+    cfg.storage.database = str(tmp_path / "tf.db")
+    c = TestClient(create_app(cfg, exchange_factory=lambda _id: exchange, sentiment_fetcher=lambda _c: None))
+    assert "4h" not in c.get("/api/meta").json()["timeframes"]
+    res = c.get("/api/candles", params={"symbol": "BTC/USDT", "timeframe": "4h"})
+    assert res.status_code == 400 and "isn't available" in res.json()["detail"]

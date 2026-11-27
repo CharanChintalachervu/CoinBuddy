@@ -74,13 +74,13 @@ coin-buddy snapshot
 You should see the latest BTC/USDT price, a sentiment score, and a signal with its reasoning. If you do, you're ready: continue with the [Quickstart tour](quickstart.md).
 
 !!! warning "In the United States?"
-    Binance blocks US IP addresses, so the default exchange will fail with a "451" or "restricted location" error. Use Kraken instead:
+    Binance blocks US IP addresses, so the default exchange will fail with a "451" or "restricted location" error. Use Coinbase instead (Kraken also works for live prices, but only serves about a month of candles, too little for backtests):
 
     ```bash
-    coin-buddy snapshot --exchange kraken --symbol BTC/USD
+    coin-buddy snapshot --exchange coinbase --symbol BTC/USD
     ```
 
-    To make it permanent, set `exchange: kraken` and `symbol: BTC/USD` in `config.yaml` (see [Configuration](configuration.md)). Also replace the `web.watchlist` entries with `/USD` pairs.
+    To make it permanent, set `exchange: coinbase` and `symbol: BTC/USD` in `config.yaml` (see [Configuration](configuration.md)). Also replace the `web.watchlist` entries with `/USD` pairs.
 
 ## 5. (Optional) Run the tests
 
@@ -88,7 +88,7 @@ You should see the latest BTC/USDT price, a sentiment score, and a signal with i
 pytest
 ```
 
-All 55 tests run offline in about 20 seconds. See [Testing](../development/testing.md) for what they cover.
+All 61 tests run offline in about 25 seconds. See [Testing](../development/testing.md) for what they cover.
 
 ## Uninstalling
 

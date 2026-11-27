@@ -18,7 +18,7 @@ from typing import Any, Literal
 
 import ccxt
 import pandas as pd
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -38,18 +38,29 @@ log = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).parent / "static"
 TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1d"]
 DISCLAIMER = "Educational tool. Not financial advice. Coin Buddy never places trades."
-SECURITY_HEADERS = {
-    "X-Content-Type-Options": "nosniff",
-    "Referrer-Policy": "no-referrer",
-    "X-Frame-Options": "DENY",
-    "Content-Security-Policy": (
-        "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; "
-        # The hash allows exactly one inline stylesheet: Lightweight Charts' attribution logo (v5.2.1).
-        "style-src 'self' https://fonts.googleapis.com 'sha256-3pRED1tOXas1FXFoPb9TGCjmYe9XQsmO9OV23khV2nY='; "
-        "font-src https://fonts.gstatic.com; "
-        "img-src 'self' data:; connect-src 'self'"
-    ),
-}
+CSP_BASE = (
+    "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; "
+    # The hash allows exactly one inline stylesheet: Lightweight Charts' attribution logo (v5.2.1).
+    "style-src 'self' https://fonts.googleapis.com 'sha256-3pRED1tOXas1FXFoPb9TGCjmYe9XQsmO9OV23khV2nY='; "
+    "font-src https://fonts.gstatic.com; "
+    "img-src 'self' data:; connect-src 'self'"
+)
+
+
+def security_headers(frame_ancestors: list[str]) -> dict[str, str]:
+    """Security headers for every response.
+
+    By default no other site may show the app in a frame (clickjacking protection). Hosts that
+    display apps inside a frame, like Hugging Face Spaces, can be allowed by name via
+    `web.frame_ancestors`; X-Frame-Options can't express an allow-list, so it's omitted then.
+    """
+    headers = {"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
+    if frame_ancestors:
+        headers["Content-Security-Policy"] = f"{CSP_BASE}; frame-ancestors 'self' {' '.join(frame_ancestors)}"
+    else:
+        headers["Content-Security-Policy"] = f"{CSP_BASE}; frame-ancestors 'none'"
+        headers["X-Frame-Options"] = "DENY"
+    return headers
 
 
 class TTLCache:
@@ -107,6 +118,7 @@ def create_app(
     cache = TTLCache()
     exchanges: dict[str, Any] = {}
     exchanges_lock = threading.Lock()
+    backtest_slot = threading.Semaphore(1)
     store = Store(base.resolve(base.storage.database))
 
     # ------------------------------------------------------------ helpers
@@ -137,9 +149,23 @@ def create_app(
 
     app = FastAPI(title="Coin Buddy", version=__version__, docs_url="/api/docs", redoc_url=None, lifespan=lifespan)
 
+    def supported_timeframes(exchange_id: str) -> list[str]:
+        """Our timeframes that this exchange actually offers (Coinbase has no 4h, for example).
+
+        ccxt lists them on the client class, so no network call is needed.
+        """
+
+        def load() -> list[str]:
+            client = exchanges.get(exchange_id) or exchange_factory(exchange_id)
+            offered = getattr(client, "timeframes", None)
+            return [t for t in TIMEFRAMES if not isinstance(offered, dict) or t in offered]
+
+        return cache.get_or_set(("timeframes", exchange_id), 86400, load)
+
     def config_for(exchange_id: str, symbol: str, timeframe: str) -> Config:
-        if timeframe not in TIMEFRAMES:
-            raise ValueError(f"Unsupported timeframe '{timeframe}'. Choose from {TIMEFRAMES}.")
+        allowed = supported_timeframes(exchange_id)
+        if timeframe not in allowed:
+            raise ValueError(f"Timeframe '{timeframe}' isn't available on {exchange_id}. Choose from {allowed}.")
         out = copy.deepcopy(base)
         out.market.exchange, out.market.symbol, out.market.timeframe = exchange_id, symbol, timeframe
         return out
@@ -167,10 +193,12 @@ def create_app(
     async def value_error(_: Request, exc: ValueError) -> JSONResponse:
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
+    headers_for_every_response = security_headers(base.web.frame_ancestors)
+
     @app.middleware("http")
-    async def security_headers(request: Request, call_next):
+    async def add_security_headers(request: Request, call_next):
         response = await call_next(request)
-        response.headers.update(SECURITY_HEADERS)
+        response.headers.update(headers_for_every_response)
         return response
 
     # ------------------------------------------------------------ routes
@@ -181,7 +209,7 @@ def create_app(
             "exchange": base.market.exchange,
             "symbol": base.market.symbol,
             "timeframe": base.market.timeframe,
-            "timeframes": TIMEFRAMES,
+            "timeframes": supported_timeframes(base.market.exchange),
             "watchlist": base.web.watchlist,
             "refresh_seconds": base.web.refresh_seconds,
             "ml_horizon": base.ml.horizon_candles,
@@ -341,7 +369,13 @@ def create_app(
         strategies = ("rules", "ml") if req.strategy == "both" else (req.strategy,)
 
         def load() -> dict:
-            report = backtest(c, req.days, strategies, exchange=exchange_for(c.market.exchange))
+            # Backtests are CPU-heavy; on a shared public server, run one at a time.
+            if not backtest_slot.acquire(blocking=False):
+                raise HTTPException(429, "Another backtest is running. Please try again in a minute.")
+            try:
+                report = backtest(c, req.days, strategies, exchange=exchange_for(c.market.exchange))
+            finally:
+                backtest_slot.release()
             wf = report.walk_forward
             return {
                 "symbol": req.symbol,

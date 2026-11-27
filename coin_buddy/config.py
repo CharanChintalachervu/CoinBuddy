@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import Any
@@ -87,6 +88,9 @@ class WebConfig:
     chart_candles: int = 500
     refresh_seconds: int = 10
     sentiment_cache_seconds: int = 300
+    # Sites allowed to show the dashboard inside a frame. Empty = nobody (safest).
+    # Hosting on Hugging Face Spaces needs ["https://huggingface.co"].
+    frame_ancestors: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -130,9 +134,14 @@ def _build(cls: type, data: dict[str, Any] | None) -> Any:
 
 
 def load_config(path: str | Path | None = None) -> Config:
-    """Load config.yaml (or the given file) and the .env file next to it."""
+    """Load a config file and the .env file next to it.
+
+    Which file: `path` if given, else the COIN_BUDDY_CONFIG environment variable (used by
+    the Docker image to pick config.hosted.yaml), else config.yaml.
+    """
     load_dotenv(PROJECT_ROOT / ".env")
-    config_path = Path(path) if path else DEFAULT_CONFIG_PATH
+    chosen = path or os.getenv("COIN_BUDDY_CONFIG")
+    config_path = Path(chosen) if chosen else DEFAULT_CONFIG_PATH
     if not config_path.exists():
         return Config()
     with open(config_path, encoding="utf-8") as fh:

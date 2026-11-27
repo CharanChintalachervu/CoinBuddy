@@ -25,3 +25,30 @@ jobs:
           ruff format --check .
       - name: Test
         run: pytest
+
+  docker:
+    # Proves the Dockerfile builds and the container actually serves the app.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t coin-buddy:ci .
+      - name: Start container
+        run: docker run -d --name coin-buddy -p 8000:8000 coin-buddy:ci
+      - name: Wait until healthy
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/api/health; then echo; exit 0; fi
+            sleep 2
+          done
+          echo "Container never became healthy"; docker logs coin-buddy; exit 1
+      - name: Check dashboard and API
+        run: |
+          curl -fsS http://localhost:8000/ | grep -q "<title>Coin Buddy</title>"
+          curl -fsS http://localhost:8000/static/app.js > /dev/null
+          curl -fsS http://localhost:8000/api/meta | tee meta.json
+          grep -q '"exchange":"coinbase"' meta.json
+          curl -fsSI http://localhost:8000/ | grep -i "frame-ancestors 'self' https://huggingface.co"
+      - name: Show logs
+        if: always()
+        run: docker logs coin-buddy || true

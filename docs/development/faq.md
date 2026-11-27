@@ -6,7 +6,7 @@
     Binance blocks the US (and some other regions). Switch exchange:
 
     ```bash
-    coin-buddy snapshot --exchange kraken --symbol BTC/USD
+    coin-buddy snapshot --exchange coinbase --symbol BTC/USD
     ```
 
     Make it permanent in `config.yaml` (`market.exchange`, `market.symbol`, and `/USD` pairs in `web.watchlist`).

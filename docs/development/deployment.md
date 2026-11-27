@@ -13,10 +13,18 @@ Open <http://localhost:8000>. What the image does:
 
 - Based on `python:3.12-slim`.
 - Installs dependencies in their own layer, so code changes rebuild quickly.
-- Runs as a **non-root** user (`buddy`).
+- Runs the app from `/app` with `python -m coin_buddy`, so it finds its config files and writes `data/` and `models/` next to them.
+- Runs as a **non-root** user (`buddy`, UID 1000).
 - Binds to `0.0.0.0:8000` inside the container.
 - Has a `HEALTHCHECK` on `/api/health`.
 - Excludes `.env`, `data/`, `models/`, tests and docs (see `.dockerignore`).
+- **Uses `config.hosted.yaml`** (Coinbase with USD pairs, which works in the US) via the `COIN_BUDDY_CONFIG` environment variable. To use your normal settings instead:
+
+    ```bash
+    docker run -p 8000:8000 -e COIN_BUDDY_CONFIG=/app/config.yaml coin-buddy
+    ```
+
+CI builds the image and checks that the running container serves the dashboard and API on every push (the `docker` job in `.github/workflows/ci.yml`).
 
 **Keep history and models across restarts** with volumes:
 
@@ -29,17 +37,37 @@ docker run -p 8000:8000 \
 !!! note "Docker Desktop licensing"
     Docker Engine is free and open-source. Docker Desktop is free for personal use, education and small businesses; larger companies need a paid plan. On Linux you can use Docker Engine directly, and Podman is a free drop-in alternative.
 
-## Free hosting
+## Free hosting on Hugging Face Spaces
 
-Any host that runs a Docker container works. Two with free tiers:
+The live demo runs on a free **Hugging Face Docker Space** (2 vCPU, 16 GB RAM, no credit card). Free Spaces go to sleep after 48 hours without visitors and wake up on the next visit, which takes about a minute.
 
-| Host | Notes |
-|---|---|
-| **Hugging Face Spaces** (Docker Space) | Free CPU instances. Spaces expect port **7860** by default: set `app_port: 8000` in the Space's README metadata, or change the port in the Dockerfile `CMD`. |
-| **Render** (free web service) | Free instances sleep after inactivity, so the first visit after a while is slow. |
+Deployment is automatic: `.github/workflows/deploy-hf.yml` runs after **CI passes** on `main`. It packages the server code, adds the Space's settings header (`sdk: docker`, `app_port: 8000`), and pushes it to your Space.
 
-!!! warning "US-based hosts and Binance"
-    Many free hosts run in the US, where Binance blocks requests. Set `exchange: kraken` with USD pairs in `config.yaml` before deploying.
+### One-time setup
+
+1. **Create the Space.** At <https://huggingface.co/new-space>, give it a name (e.g. `coin-buddy`), choose **Docker** as the SDK with the **Blank** template, **CPU basic (free)** hardware, and **Public** visibility. Click **Create Space**.
+2. **Create a token.** Go to <https://huggingface.co/settings/tokens>, then **Create new token**, type **Write**, and copy it.
+3. **Give GitHub the token and the Space name.** In the GitHub repo, go to **Settings → Secrets and variables → Actions**:
+    - **Secrets** tab, **New repository secret**: name `HF_TOKEN`, value = the token.
+    - **Variables** tab, **New repository variable**: name `HF_SPACE`, value = `<your-hf-username>/<space-name>`, e.g. `charanchintalachervu/coin-buddy`.
+4. **Deploy.** Go to **Actions → Deploy to Hugging Face → Run workflow**. From then on, every push that passes CI redeploys automatically.
+
+The app is then at `https://huggingface.co/spaces/<user>/<space>`, with a direct full-page URL at `https://<user>-<space>.hf.space`.
+
+### How the hosted copy differs
+
+| | Your computer (`config.yaml`) | Hosted (`config.hosted.yaml`) |
+|---|---|---|
+| Exchange | Binance, USDT pairs | **Coinbase**, USD pairs. Free hosts mostly run in the US, where Binance is blocked. Kraken works there too, but only serves about a month of candles, which is too little for backtests. |
+| Timeframes | 1m · 5m · 15m · 1H · 4H · 1D | 1m · 5m · 15m · 1H · 1D (Coinbase has no 4-hour candles; the app only offers what the exchange supports) |
+| Framing | Denied | Allowed for `https://huggingface.co` only, so the Space page can show the app (`web.frame_ancestors`) |
+| Backtests | Unlimited | One at a time; others get a "try again in a minute" message. Coinbase serves 300 candles per request, so long backtests take a few minutes the first time (then cached for an hour). |
+| Sentiment | Your Reddit credentials if set | Reddit often blocks anonymous requests from cloud servers, so sentiment may abstain. Add `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` as **Space secrets** to enable it. |
+| History & models | Kept in `data/`, `models/` | Reset whenever the Space restarts (free Spaces have no persistent disk) |
+
+### Other free hosts
+
+Any Docker host works with the same image, e.g. a free **Render** web service (it sleeps after 15 minutes idle, so first visits are slow). Remove `frame_ancestors` from `config.hosted.yaml` if the host doesn't embed apps in a frame.
 
 !!! danger "There is no login"
     A public deployment is visible to anyone with the URL. That's fine for this read-only demo (it never trades and stores no personal data), but don't put secrets in `config.yaml`. Use the host's secret settings for anything from `.env`.

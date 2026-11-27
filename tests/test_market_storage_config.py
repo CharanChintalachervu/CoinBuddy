@@ -81,3 +81,18 @@ def test_model_file_is_per_market():
     cfg = Config()
     cfg.market.exchange, cfg.market.symbol, cfg.market.timeframe = "kraken", "BTC/USD", "4h"
     assert cfg.model_file().name == "kraken-BTC-USD-4h.joblib"
+
+
+def test_config_file_from_environment_variable(tmp_path, monkeypatch):
+    path = tmp_path / "hosted.yaml"
+    path.write_text("market:\n  exchange: coinbase\n", encoding="utf-8")
+    monkeypatch.setenv("COIN_BUDDY_CONFIG", str(path))
+    assert load_config().market.exchange == "coinbase"
+
+
+def test_hosted_config_is_valid():
+    from coin_buddy.config import PROJECT_ROOT
+
+    cfg = load_config(PROJECT_ROOT / "config.hosted.yaml")
+    assert cfg.market.exchange == "coinbase" and cfg.web.host == "0.0.0.0"
+    assert cfg.web.frame_ancestors == ["https://huggingface.co"]

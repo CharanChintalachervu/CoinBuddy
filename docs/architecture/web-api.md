@@ -215,7 +215,7 @@ Every response carries:
 | Header | Value / purpose |
 |---|---|
 | `Content-Security-Policy` | Scripts only from this server and `cdn.jsdelivr.net`; styles only from this server and Google Fonts, plus one inline style allowed by hash (the chart library's attribution logo); network calls only to this server. |
-| `X-Frame-Options: DENY` | The app can't be embedded in other sites (clickjacking protection). |
+| `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` | The app can't be embedded in other sites (clickjacking protection). A host that shows apps in a frame can be allowed by name with `web.frame_ancestors`; the hosted config allows only `https://huggingface.co`. |
 | `X-Content-Type-Options: nosniff` | Browsers won't guess file types. |
 | `Referrer-Policy: no-referrer` | Clicking a Reddit link doesn't leak your dashboard URL. |
 

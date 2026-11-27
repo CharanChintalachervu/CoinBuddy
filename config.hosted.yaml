@@ -1,0 +1,18 @@
+# Coin Buddy: settings for the public hosted copy (Docker / Hugging Face Spaces).
+# The Docker image loads this file via the COIN_BUDDY_CONFIG environment variable.
+# Anything not listed here uses the defaults (see config.yaml).
+
+market:
+  # Free hosts mostly run in the US, where Binance is blocked. Coinbase works there and
+  # (unlike Kraken) serves a full year of history, so backtests keep working.
+  exchange: coinbase
+  symbol: BTC/USD
+  timeframe: 1h
+
+web:
+  host: 0.0.0.0            # listen inside the container
+  port: 8000
+  watchlist: [BTC/USD, ETH/USD, SOL/USD, XRP/USD, DOGE/USD, ADA/USD]
+  # Hugging Face shows Spaces inside a frame on huggingface.co; allow exactly that site.
+  frame_ancestors: ["https://huggingface.co"]
+  sentiment_cache_seconds: 600   # be gentle with Reddit from a shared server
