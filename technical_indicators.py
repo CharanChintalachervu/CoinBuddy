@@ -7,9 +7,8 @@ import ta
 # 1. Load Binance API Keys
 load_dotenv()
 client = Client(
-    api_key=os.getenv("xAB2L5cpEGir3NiOpu50aCfjA9Ybv9UC4HJ9zn7BSyzVerXbeBwWFEUui6zmplYm"),
-    api_secret=os.getenv("QmhpY1EUNgeqMCmWJWJocObypT9LRmusdRd9jLSCvpzWKXPxaMdoE2rqnKQ7k1CI")
-)
+    api_key=BINANCE_API_KEY_1
+    api_secret=BINANCE_API_KEY_2
 
 # 2. Get candlestick data from Binance
 def get_ohlcv(symbol="BTCUSDT", interval=Client.KLINE_INTERVAL_1HOUR, limit=100):
