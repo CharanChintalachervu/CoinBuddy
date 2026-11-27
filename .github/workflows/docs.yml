@@ -25,7 +25,7 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -e ".[docs]"
-      - name: Build (strict: broken links fail the build)
+      - name: Build (strict mode, so broken links fail the build)
         run: mkdocs build --strict
       - uses: actions/upload-pages-artifact@v3
         with:
