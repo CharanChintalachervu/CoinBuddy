@@ -1,4 +1,4 @@
-# Coin Buddy: settings for the public hosted copy (Docker / Hugging Face Spaces).
+# Coin Buddy: settings for the public hosted copy (Docker / Render).
 # The Docker image loads this file via the COIN_BUDDY_CONFIG environment variable.
 # Anything not listed here uses the defaults (see config.yaml).
 
@@ -13,6 +13,5 @@ web:
   host: 0.0.0.0            # listen inside the container
   port: 8000
   watchlist: [BTC/USD, ETH/USD, SOL/USD, XRP/USD, DOGE/USD, ADA/USD]
-  # Hugging Face shows Spaces inside a frame on huggingface.co; allow exactly that site.
-  frame_ancestors: ["https://huggingface.co"]
   sentiment_cache_seconds: 600   # be gentle with Reddit from a shared server
+  max_backtest_days: 365         # free servers have a fraction of a CPU core

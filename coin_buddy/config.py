@@ -88,9 +88,11 @@ class WebConfig:
     chart_candles: int = 500
     refresh_seconds: int = 10
     sentiment_cache_seconds: int = 300
-    # Sites allowed to show the dashboard inside a frame. Empty = nobody (safest).
-    # Hosting on Hugging Face Spaces needs ["https://huggingface.co"].
+    # Sites allowed to show the dashboard inside a frame. Empty = nobody (safest). Only needed
+    # for hosts that display apps inside their own page, e.g. ["https://example-host.com"].
     frame_ancestors: list[str] = field(default_factory=list)
+    # Longest backtest the web app accepts. Lower it on small servers (backtests are CPU-heavy).
+    max_backtest_days: int = 1500
 
 
 @dataclass

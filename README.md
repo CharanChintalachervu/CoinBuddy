@@ -188,7 +188,7 @@ docker build -t coin-buddy .
 docker run -p 8000:8000 coin-buddy      # then open http://localhost:8000
 ```
 
-**Free hosting:** any free Docker host works, for example a Docker Space on Hugging Face or a free web service on Render. Many free hosts run in the US, where Binance is blocked, so the Docker image uses `config.hosted.yaml` (Coinbase with USD pairs). Live demo setup: see the Deployment page in the docs.
+**Free hosting on Render:** the repo includes a Render Blueprint (`render.yaml`). Sign in to [Render](https://render.com) with GitHub, choose **New → Blueprint**, and pick this repo; it deploys the Docker image on the free plan and redeploys on every push. Free hosts mostly run in the US, where Binance is blocked, so the image uses `config.hosted.yaml` (Coinbase with USD pairs). Full guide: the Deployment page in the docs.
 
 ## Project structure
 

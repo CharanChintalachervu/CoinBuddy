@@ -276,8 +276,18 @@
     } else {
       chg.textContent = "";
     }
-    $("#stat-high").textContent = t ? fmtPrice(t.high) : "—";
-    $("#stat-low").textContent = t ? fmtPrice(t.low) : "—";
+    // Some exchanges (e.g. Coinbase) don't report 24h high/low; derive them from the candles.
+    let { high, low } = t || {};
+    if (high == null || low == null) {
+      const since = Date.now() / 1000 - 86400;
+      const recent = chart.rows.filter((r) => r.time >= since && r.high != null);
+      if (recent.length) {
+        high = Math.max(...recent.map((r) => r.high));
+        low = Math.min(...recent.map((r) => r.low));
+      }
+    }
+    $("#stat-high").textContent = high != null ? fmtPrice(high) : "—";
+    $("#stat-low").textContent = low != null ? fmtPrice(low) : "—";
     const quote = state.symbol.split("/")[1] || "";
     $("#stat-vol").textContent = t?.quote_volume ? `${fmtCompact(t.quote_volume)} ${quote}` : "—";
   }
@@ -543,9 +553,10 @@
     const body = $("#ml-body");
     if (!s.ml) {
       // Models are tied to the exchange, symbol and timeframe they were trained on.
-      body.innerHTML = `<p class="muted">No model for ${esc(s.symbol)} ${esc(tfLabel(s.timeframe))} yet.</p>
-        <div class="note">Train one on two years of real history:<br>
-        <code>coin-buddy train --symbol ${esc(s.symbol)} --timeframe ${esc(s.timeframe)}</code></div>`;
+      body.innerHTML = `<p class="muted">No model is trained for ${esc(s.symbol)} ${esc(tfLabel(s.timeframe))} on this server.</p>
+        <div class="note">Running Coin Buddy yourself? Train one on two years of real history:<br>
+        <code>coin-buddy train --symbol ${esc(s.symbol)} --timeframe ${esc(s.timeframe)}</code><br>
+        Or see how the model performs in <a href="#/backtest">Backtest</a>.</div>`;
       return;
     }
     const p = s.ml.p_up * 100;
@@ -1009,6 +1020,13 @@
       .map((t) => `<button type="button" data-tf="${t}" aria-pressed="${t === state.tf}">${tfLabel(t)}</button>`)
       .join("");
     $("#bt-tf").innerHTML = m.timeframes.filter((t) => t !== "1m").map((t) => `<option value="${t}">${tfLabel(t)}</option>`).join("");
+    // Hide backtest periods longer than this server allows (small hosted servers cap them).
+    $$("#bt-days button").forEach((b) => (b.hidden = Number(b.dataset.days) > m.max_backtest_days));
+    if (bt.days > m.max_backtest_days) {
+      const allowed = $$("#bt-days button:not([hidden])").map((b) => Number(b.dataset.days));
+      bt.days = allowed.length ? Math.max(...allowed) : m.max_backtest_days;
+    }
+    setSeg($("#bt-days"), "days", bt.days);
     setSeg($("#type-seg"), "type", state.chartType);
     $$("#ind-chips button").forEach((b) => b.setAttribute("aria-pressed", String(!!state.ind[b.dataset.ind])));
 

@@ -1,0 +1,19 @@
+# Render Blueprint: deploys the Coin Buddy dashboard as a free Docker web service.
+# Render reads this file when you create a Blueprint from the GitHub repo
+# (see docs/development/deployment.md). Every push to main redeploys automatically.
+services:
+  - type: web
+    name: coin-buddy
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PORT          # the port the container listens on (see Dockerfile CMD)
+        value: "8000"
+      - key: REDDIT_CLIENT_ID      # optional: Reddit API access; set the value in the Render dashboard
+        sync: false
+      - key: REDDIT_CLIENT_SECRET
+        sync: false

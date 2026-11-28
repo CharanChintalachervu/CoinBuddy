@@ -37,37 +37,42 @@ docker run -p 8000:8000 \
 !!! note "Docker Desktop licensing"
     Docker Engine is free and open-source. Docker Desktop is free for personal use, education and small businesses; larger companies need a paid plan. On Linux you can use Docker Engine directly, and Podman is a free drop-in alternative.
 
-## Free hosting on Hugging Face Spaces
+## Free hosting on Render
 
-The live demo runs on a free **Hugging Face Docker Space** (2 vCPU, 16 GB RAM, no credit card). Free Spaces go to sleep after 48 hours without visitors and wake up on the next visit, which takes about a minute.
+The live demo runs on a free **Render** web service, built straight from the repository's `Dockerfile`. Signing up with GitHub is free.
 
-Deployment is automatic: `.github/workflows/deploy-hf.yml` runs after **CI passes** on `main`. It packages the server code, adds the Space's settings header (`sdk: docker`, `app_port: 8000`), and pushes it to your Space.
+| Free plan | |
+|---|---|
+| Resources | 512 MB RAM, 0.1 CPU |
+| Sleep | Spins down after **15 minutes** without visitors; the next visit wakes it in about a minute |
+| Hours | 750 free instance hours per month, enough for one service running all month |
+| Disk | Not persistent: history and models reset on every restart or deploy |
 
 ### One-time setup
 
-1. **Create the Space.** At <https://huggingface.co/new-space>, give it a name (e.g. `coin-buddy`), choose **Docker** as the SDK with the **Blank** template, **CPU basic (free)** hardware, and **Public** visibility. Click **Create Space**.
-2. **Create a token.** Go to <https://huggingface.co/settings/tokens>, then **Create new token**, type **Write**, and copy it.
-3. **Give GitHub the token and the Space name.** In the GitHub repo, go to **Settings → Secrets and variables → Actions**:
-    - **Secrets** tab, **New repository secret**: name `HF_TOKEN`, value = the token.
-    - **Variables** tab, **New repository variable**: name `HF_SPACE`, value = `<your-hf-username>/<space-name>`, e.g. `charanchintalachervu/coin-buddy`.
-4. **Deploy.** Go to **Actions → Deploy to Hugging Face → Run workflow**. From then on, every push that passes CI redeploys automatically.
+The repository contains a **Blueprint**, `render.yaml`, which tells Render exactly how to run the app: Docker, free plan, health check on `/api/health`, port 8000.
 
-The app is then at `https://huggingface.co/spaces/<user>/<space>`, with a direct full-page URL at `https://<user>-<space>.hf.space`.
+1. Sign up at <https://render.com> with **GitHub**.
+2. In the Render dashboard, click **New → Blueprint**.
+3. Connect your GitHub account if asked, then pick the **CoinBuddy** repository.
+4. Render shows the `coin-buddy` web service from `render.yaml`. Leave the two optional Reddit values empty (or fill them in to enable sentiment), then click **Apply** / **Deploy Blueprint**.
+5. The first build takes a few minutes. The app is then live at `https://coin-buddy-xxxx.onrender.com` (the exact URL is shown on the service page).
+
+From then on, every push to `main` redeploys automatically (`autoDeploy: true`). CI also builds and runs the same Docker image on every push, so a broken image is caught on GitHub too.
 
 ### How the hosted copy differs
 
 | | Your computer (`config.yaml`) | Hosted (`config.hosted.yaml`) |
 |---|---|---|
-| Exchange | Binance, USDT pairs | **Coinbase**, USD pairs. Free hosts mostly run in the US, where Binance is blocked. Kraken works there too, but only serves about a month of candles, which is too little for backtests. |
+| Exchange | Binance, USDT pairs | **Coinbase**, USD pairs. Render's free region here is in the US, where Binance is blocked. Kraken works there too, but only serves about a month of candles, too little for backtests. |
 | Timeframes | 1m · 5m · 15m · 1H · 4H · 1D | 1m · 5m · 15m · 1H · 1D (Coinbase has no 4-hour candles; the app only offers what the exchange supports) |
-| Framing | Denied | Allowed for `https://huggingface.co` only, so the Space page can show the app (`web.frame_ancestors`) |
-| Backtests | Unlimited | One at a time; others get a "try again in a minute" message. Coinbase serves 300 candles per request, so long backtests take a few minutes the first time (then cached for an hour). |
-| Sentiment | Your Reddit credentials if set | Reddit often blocks anonymous requests from cloud servers, so sentiment may abstain. Add `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` as **Space secrets** to enable it. |
-| History & models | Kept in `data/`, `models/` | Reset whenever the Space restarts (free Spaces have no persistent disk) |
+| Backtests | Up to 1,500 days, unlimited concurrency | Up to **365 days** (`web.max_backtest_days`), **one at a time**. With 0.1 CPU and Coinbase's 300 candles per request, a first ML backtest can take several minutes; results are then cached for an hour. |
+| Sentiment | Your Reddit credentials if set | Reddit often blocks anonymous requests from cloud servers, so sentiment may abstain. Add `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` in the Render service's **Environment** settings to enable it. |
+| History & models | Kept in `data/`, `models/` | Reset on every restart (no persistent disk on the free plan) |
 
 ### Other free hosts
 
-Any Docker host works with the same image, e.g. a free **Render** web service (it sleeps after 15 minutes idle, so first visits are slow). Remove `frame_ancestors` from `config.hosted.yaml` if the host doesn't embed apps in a frame.
+Any host that runs a Docker container works with the same image. Free tiers change often; as of late 2026, Hugging Face Docker Spaces and Koyeb require a paid plan or a card, and Google Cloud Run needs a card. If a host shows apps inside its own page (an iframe), add it to `web.frame_ancestors` in `config.hosted.yaml`.
 
 !!! danger "There is no login"
     A public deployment is visible to anyone with the URL. That's fine for this read-only demo (it never trades and stores no personal data), but don't put secrets in `config.yaml`. Use the host's secret settings for anything from `.env`.

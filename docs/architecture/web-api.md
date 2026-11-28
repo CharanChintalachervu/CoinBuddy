@@ -49,6 +49,7 @@ Caching is per argument combination and shared by everyone using the server, so 
   "ml_horizon": 12,
   "thresholds": {"sentiment_buy": 0.2, "sentiment_sell": -0.2},
   "costs": {"fee": 0.001, "slippage": 0.0005},
+  "max_backtest_days": 1500,
   "disclaimer": "Educational tool. Not financial advice. Coin Buddy never places trades."
 }
 ```
@@ -155,7 +156,7 @@ Request body:
 |---|---|
 | `symbol` | 3–30 characters |
 | `timeframe` | `1m 5m 15m 1h 4h 1d` |
-| `days` | 30–1500 |
+| `days` | 30 up to `web.max_backtest_days` (1500 by default, 365 on the hosted demo) |
 | `strategy` | `rules`, `ml` or `both` |
 
 Response (abridged):
@@ -186,6 +187,7 @@ Response (abridged):
 - `results[].name` is `rules`, `ml` and/or `rules (ML test window)`.
 - Equity curves are downsampled to at most 1,500 points; `trades` holds the 300 most recent, newest first.
 - Backtests with ML can take up to a minute. Identical requests within an hour are instant.
+- Only one backtest runs at a time; a second concurrent request gets **429** with a "try again in a minute" message.
 
 ### `GET /api/history?limit=200`
 
@@ -215,7 +217,7 @@ Every response carries:
 | Header | Value / purpose |
 |---|---|
 | `Content-Security-Policy` | Scripts only from this server and `cdn.jsdelivr.net`; styles only from this server and Google Fonts, plus one inline style allowed by hash (the chart library's attribution logo); network calls only to this server. |
-| `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` | The app can't be embedded in other sites (clickjacking protection). A host that shows apps in a frame can be allowed by name with `web.frame_ancestors`; the hosted config allows only `https://huggingface.co`. |
+| `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` | The app can't be embedded in other sites (clickjacking protection). A host that shows apps in a frame can be allowed by name with `web.frame_ancestors`. |
 | `X-Content-Type-Options: nosniff` | Browsers won't guess file types. |
 | `Referrer-Policy: no-referrer` | Clicking a Reddit link doesn't leak your dashboard URL. |
 

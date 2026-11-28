@@ -95,4 +95,5 @@ def test_hosted_config_is_valid():
 
     cfg = load_config(PROJECT_ROOT / "config.hosted.yaml")
     assert cfg.market.exchange == "coinbase" and cfg.web.host == "0.0.0.0"
-    assert cfg.web.frame_ancestors == ["https://huggingface.co"]
+    assert cfg.web.frame_ancestors == []  # hosted copy denies all framing
+    assert cfg.web.max_backtest_days == 365

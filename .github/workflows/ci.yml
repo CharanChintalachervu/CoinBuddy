@@ -48,7 +48,8 @@ jobs:
           curl -fsS http://localhost:8000/static/app.js > /dev/null
           curl -fsS http://localhost:8000/api/meta | tee meta.json
           grep -q '"exchange":"coinbase"' meta.json
-          curl -fsSI http://localhost:8000/ | grep -i "frame-ancestors 'self' https://huggingface.co"
+          curl -fsSI http://localhost:8000/ | grep -i "x-frame-options: DENY"
+          curl -fsS http://localhost:8000/api/meta | grep -q '"max_backtest_days":365'
       - name: Show logs
         if: always()
         run: docker logs coin-buddy || true

@@ -127,9 +127,9 @@ def test_framing_is_denied_by_default(client):
 def test_framing_allowed_only_for_configured_hosts():
     from coin_buddy.web.server import security_headers
 
-    headers = security_headers(["https://huggingface.co"])
+    headers = security_headers(["https://example-host.com"])
     assert "x-frame-options" not in {k.lower() for k in headers}
-    assert "frame-ancestors 'self' https://huggingface.co" in headers["Content-Security-Policy"]
+    assert "frame-ancestors 'self' https://example-host.com" in headers["Content-Security-Policy"]
 
 
 def test_only_one_backtest_runs_at_a_time(tmp_path, monkeypatch):
@@ -170,3 +170,13 @@ def test_only_timeframes_the_exchange_supports(tmp_path):
     assert "4h" not in c.get("/api/meta").json()["timeframes"]
     res = c.get("/api/candles", params={"symbol": "BTC/USDT", "timeframe": "4h"})
     assert res.status_code == 400 and "isn't available" in res.json()["detail"]
+
+
+def test_backtest_length_is_capped(tmp_path):
+    cfg = Config()
+    cfg.storage.database = str(tmp_path / "cap.db")
+    cfg.web.max_backtest_days = 90
+    c = TestClient(create_app(cfg, exchange_factory=lambda _id: object(), sentiment_fetcher=lambda _c: None))
+    assert c.get("/api/meta").json()["max_backtest_days"] == 90
+    res = c.post("/api/backtest", json={"symbol": "BTC/USDT", "days": 365})
+    assert res.status_code == 400 and "up to 90 days" in res.json()["detail"]

@@ -17,7 +17,7 @@ RUN pip install --upgrade pip && pip install .
 COPY coin_buddy ./coin_buddy
 COPY config.yaml config.hosted.yaml LICENSE ./
 
-# Non-root user with UID 1000 (required by Hugging Face Spaces, good practice anywhere).
+# Non-root user with a fixed UID (1000), so file ownership is predictable on any host.
 RUN useradd --create-home --uid 1000 buddy && mkdir -p data models reports && chown -R buddy /app
 USER buddy
 

@@ -108,7 +108,8 @@ See [Machine learning](../concepts/machine-learning.md).
 | `chart_candles` | `500` | Candles drawn on the chart. |
 | `refresh_seconds` | `10` | How often the browser polls for live prices and candles. |
 | `sentiment_cache_seconds` | `300` | Reddit is rate-limited, so sentiment is reused for this long. |
-| `frame_ancestors` | `[]` | Sites allowed to show the dashboard inside a frame. Empty means none, which blocks clickjacking. The hosted config allows `https://huggingface.co`, because Spaces display apps in a frame. |
+| `frame_ancestors` | `[]` | Sites allowed to show the dashboard inside a frame. Empty means none, which blocks clickjacking. Only needed for hosts that display apps inside their own page. |
+| `max_backtest_days` | `1500` | Longest backtest the web app accepts. Longer period buttons are hidden. The hosted config uses `365`, because free servers have a fraction of a CPU core. |
 
 The timeframe buttons only list timeframes the configured exchange supports. For example, Coinbase has no 4-hour candles.
 

@@ -51,7 +51,7 @@ def security_headers(frame_ancestors: list[str]) -> dict[str, str]:
     """Security headers for every response.
 
     By default no other site may show the app in a frame (clickjacking protection). Hosts that
-    display apps inside a frame, like Hugging Face Spaces, can be allowed by name via
+    display apps inside a frame of their own page can be allowed by name via
     `web.frame_ancestors`; X-Frame-Options can't express an allow-list, so it's omitted then.
     """
     headers = {"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
@@ -218,6 +218,7 @@ def create_app(
                 "sentiment_sell": base.strategy.sentiment_sell,
             },
             "costs": {"fee": base.backtest.fee_rate, "slippage": base.backtest.slippage_rate},
+            "max_backtest_days": base.web.max_backtest_days,
             "disclaimer": DISCLAIMER,
         }
 
@@ -366,6 +367,8 @@ def create_app(
     @app.post("/api/backtest")
     def run_backtest_endpoint(req: BacktestRequest, exchange: str = Query(None)) -> dict:
         c = config_for(exchange or base.market.exchange, req.symbol, req.timeframe)
+        if req.days > base.web.max_backtest_days:
+            raise ValueError(f"This server allows backtests of up to {base.web.max_backtest_days} days.")
         strategies = ("rules", "ml") if req.strategy == "both" else (req.strategy,)
 
         def load() -> dict:
